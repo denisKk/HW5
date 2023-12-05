@@ -1,12 +1,15 @@
 
 import SwiftUI
+import Combine
 
 struct MainScreen: View {
-    @State var text: String = .init()
+    @State var suffixText: String = .init()
     @State var suffixArray: Suffixes = .init()
     @State var sort: Suffixes.Sort = .Asc
     @State var listMode: ListMode = .all
-    @State var search: String = .init()
+    @State var searchText: String = .init()
+    @State var debouncedSearchText: String = .init()
+    let searchTextPublisher = PassthroughSubject<String, Never>()
     
     let width: CGFloat = 100
     
@@ -32,8 +35,17 @@ struct MainScreen: View {
             }
         }
         .animation(.easeInOut, value: listMode)
-        .onChange(of: text) { newValue in
+        .onChange(of: suffixText) { newValue in
             suffixArray = Suffixes(text: newValue)
+        }
+        .onChange(of: searchText, perform: { newValue in
+            searchTextPublisher.send(newValue)
+        })
+        .onReceive(
+            searchTextPublisher
+                .debounce(for: .milliseconds(500), scheduler: DispatchQueue.main)
+        ) { receive in
+            debouncedSearchText = receive
         }
         .onAppear{
             UITextField.appearance().clearButtonMode = .whileEditing
@@ -51,7 +63,7 @@ struct MainScreen: View {
     
     @ViewBuilder
     var textField: some View {
-        TextField("type text...", text: $text, axis: .vertical)
+        TextField("type text...", text: $suffixText, axis: .vertical)
             .autocorrectionDisabled(true)
             .textInputAutocapitalization(.never)
             .foregroundColor(.black)
@@ -90,12 +102,12 @@ struct MainScreen: View {
     var listViewAll: some View {
         
         let max = suffixArray.max
-        let dataArray = suffixArray.getSorted(sort, search: search)
+        let dataArray = suffixArray.getSorted(sort, search: debouncedSearchText)
  
         VStack {
             ScrollView {
                 
-                if text.isEmpty {
+                if suffixText.isEmpty {
                     Text("No data")
                         .font(.callout)
                 } else {
@@ -122,7 +134,7 @@ struct MainScreen: View {
                                     Image(systemName: "magnifyingglass.circle")
                                         .font(.title)
                                         .padding(.leading, 6)
-                                    TextField("search", text: $search)
+                                    TextField("search", text: $searchText)
                                         .textFieldStyle(.plain)
                                         .padding(.horizontal, 4)
                                         .autocorrectionDisabled(true)
