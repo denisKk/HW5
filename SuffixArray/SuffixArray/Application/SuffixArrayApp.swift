@@ -1,9 +1,3 @@
-//
-//  SuffixArrayApp.swift
-//  SuffixArray
-//
-//  Created by Dev on 1.12.23.
-//
 
 import SwiftUI
 
@@ -11,7 +5,7 @@ import SwiftUI
 struct SuffixArrayApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            MainScreen()
         }
     }
 }
